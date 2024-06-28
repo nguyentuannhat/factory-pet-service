@@ -1,0 +1,82 @@
+stages:
+  - build
+  - deploy
+  - clean
+
+variables:
+  GIT_STRATEGY: fetch
+  DOCKER_DRIVER: overlay2
+
+build-source-dev:
+  stage: build
+  tags:
+    - factory-mes-uat
+  script:
+    - docker build --label FACTORY-MES-DOMAIN-DEV --build-arg PORT=$DEV_MES_DOMAIN_PORT
+      --build-arg DB_HOST=$DEV_DB_HOST --build-arg DB_PORT=$DEV_DB_PORT
+      --build-arg DB_NAME=$DEV_DB_NAME --build-arg DB_USERNAME=$DEV_DB_USERNAME
+      --build-arg DB_PASSWORD=$DEV_DB_PASSWORD --build-arg SERVICE_NAME=$DEV_MES_SERVICE_NAME
+      --network host . -t fac-dev-mes-domain
+  only:
+    - develop
+
+deploy-source-dev:
+  stage: deploy
+  tags:
+    - factory-mes-uat
+  script:
+    - docker rm -f fac-dev-mes-domain || true
+    - docker run -d --network host ${MES_DEV_LOG_OPTIONS} --name=fac-dev-mes-domain --restart always fac-dev-mes-domain
+  only:
+    - develop
+
+cleanup-dev:
+  stage: clean
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  script:
+    - docker image prune -f --filter "label=FACTORY-MES-DOMAIN-DEV"
+  needs:
+    - deploy-source-dev
+  tags:
+    - factory-mes-uat
+  only:
+    - develop
+
+build-source-uat:
+  stage: build
+  tags:
+    - factory-mes-uat
+  script:
+    - docker build --label FACTORY-MES-DOMAIN-UAT --build-arg PORT=$UAT_MES_DOMAIN_PORT
+      --build-arg DB_HOST=$UAT_DB_HOST --build-arg DB_PORT=$UAT_DB_PORT
+      --build-arg DB_NAME=$UAT_DB_NAME --build-arg DB_USERNAME=$UAT_DB_USERNAME
+      --build-arg DB_PASSWORD=$UAT_DB_PASSWORD --build-arg DOMAIN_NAME=$DOMAIN_NAME
+      --network host . -t fac-uat-mes-domain
+  only:
+    - uat
+
+deploy-source-uat:
+  stage: deploy
+  tags:
+    - factory-mes-uat
+  script:
+    - docker rm -f fac-uat-mes-domain || true
+    - docker run -d --network host ${MES_UAT_LOG_OPTIONS} --name=fac-uat-mes-domain --restart always fac-uat-mes-domain
+  only:
+    - uat
+
+cleanup-uat:
+  stage: clean
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  script:
+    - docker image prune -f --filter "label=FACTORY-MES-DOMAIN-UAT"
+  needs:
+    - deploy-source-uat
+  tags:
+    - factory-mes-uat
+  only:
+    - uat

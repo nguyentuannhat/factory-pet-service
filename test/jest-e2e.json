@@ -1,0 +1,15 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testRegex": [".test.ts$"],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "testTimeout": 90000,
+  "moduleNameMapper": {
+    "^src/(.*)": "<rootDir>/src/$1",
+    "^src": "<rootDir>/src",
+    "^test/(.*)": "<rootDir>/test/$1"
+  }
+}
